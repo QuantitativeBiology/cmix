@@ -87,6 +87,6 @@ Missing values in `G`, `M` or `K` raise an error.
 | all variants, all phenotypes (LM)   | one `O(n p q)` matrix product      |
 
 In the example notebook (shared 48-core server, BLAS capped at 8 threads)
-17,486 CRISPR phenotypes x 395 variants on 535 cell lines took about 2 s as a
-linear model and 77 s as a mixed model with five covariates; 819 drugs x 529
-variants with 515 different missingness patterns took 1.6 s and 31 s.
+17,486 CRISPR phenotypes x 395 variants on about 530 cell lines took about 2 s
+as a linear model and 72 s as a mixed model with five covariates; 819 drugs x
+529 variants with about 510 different missingness patterns took 1.6 s and 33 s.

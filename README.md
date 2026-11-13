@@ -69,8 +69,8 @@ linear regressions.
 - [docs/plotting.md](docs/plotting.md): the plotting functions and default style.
 - [examples/cell_lines_association.ipynb](examples/cell_lines_association.ipynb):
   proof of concept on ~1,000 cancer cell lines (drug response and CRISPR-Cas9
-  gene essentiality versus 678 genomic features), linear model versus mixed
-  model, with timings.
+  gene essentiality versus 678 genomic features, kinship from gene
+  expression), linear model versus mixed model, with timings.
 
 ## Speed
 
@@ -79,8 +79,8 @@ Timings from the example notebook (shared 48-core server, OpenBLAS capped at
 
 | scan                                            | tests  | linear model | mixed model |
 |-------------------------------------------------|--------|--------------|-------------|
-| 819 drugs x 529 genomic features (up to 991 lines, 515 missingness patterns) | 430k | 1.6 s | 31 s |
-| 17,486 CRISPR genes x 395 features (535 lines)  | 6.9M   | 2-13 s*      | 77 s        |
+| 819 drugs x 529 genomic features (up to 978 lines, ~510 missingness patterns) | 430k | 1.6 s | 33 s |
+| 17,486 CRISPR genes x 395 features (531 lines)  | 6.9M   | 2-13 s*      | 72 s        |
 
 \* the linear model scan of the CRISPR data is a single matrix product; it ran
 in about 2 s in isolation and 13 s while the server was busy.
