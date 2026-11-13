@@ -15,7 +15,8 @@ def simulated():
     freq = np.clip(rng.beta(0.5, 0.5, size=(24, 1500)), 0.02, 0.98)
     X = rng.binomial(1, freq[group]).astype(float)
     K = cmix.kinship(X)
-    M = np.c_[np.ones(n), rng.normal(size=n)]
+    age = rng.normal(size=n)
+    M = np.c_[np.ones(n), age]
     G = rng.binomial(1, 0.25, size=(n, p)).astype(float)
     g = rng.multivariate_normal(np.zeros(n), 0.7 * K)
     y = M @ [0.5, 0.3] + 1.0 * G[:, 10] + g + rng.normal(scale=np.sqrt(0.3), size=n)
@@ -23,7 +24,7 @@ def simulated():
     return {
         "y": pd.Series(y, index=samples, name="trait"),
         "G": pd.DataFrame(G, index=samples, columns=[f"v{j}" for j in range(p)]),
-        "M": pd.DataFrame(M, index=samples, columns=["intercept", "age"]),
+        "M": pd.DataFrame({"age": age}, index=samples),  # intercept added by scan
         "K": pd.DataFrame(K, index=samples, columns=samples),
         "X": X,
         "causal": "v10",

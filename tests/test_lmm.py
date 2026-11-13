@@ -35,6 +35,7 @@ def test_eigh_kinship_reconstructs_matrix(simulated):
 
 def test_fit_null_matches_dense_maximum_likelihood(simulated):
     y, M, K = (simulated[k].to_numpy() for k in ("y", "M", "K"))
+    M = np.c_[np.ones(y.size), M]
     S, U = eigh_kinship(K)
     null = fit_null(U.T @ y, U.T @ M, S)
 
@@ -68,6 +69,7 @@ def test_fit_null_recovers_simulated_heritability():
 def test_scan_variants_matches_dense_gls(simulated):
     y, M, K, G = (simulated[k].to_numpy() for k in ("y", "M", "K", "G"))
     n = y.size
+    M = np.c_[np.ones(n), M]
     S, U = eigh_kinship(K)
     null = fit_null(U.T @ y, U.T @ M, S)
     w = 1.0 / (S + null["delta"])

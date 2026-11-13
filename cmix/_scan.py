@@ -94,7 +94,7 @@ def _check_index(reference, index, name):
         raise ValueError(f"the sample index of {name} does not match the one of Y")
 
 
-def scan(Y, G, K=None, M=None, verbose=False, threads=8):
+def scan(Y, G, K=None, M=None, intercept=True, verbose=False, threads=8):
     """Test the association of every column of ``G`` with every column of ``Y``.
 
     For each phenotype a null model ``y ~ M`` (plus the random effect when a
@@ -114,8 +114,11 @@ def scan(Y, G, K=None, M=None, verbose=False, threads=8):
         Kinship (sample covariance) matrix for the random effect.  When omitted
         a plain linear model is fitted.
     M : array-like, shape (n, c), optional
-        Covariates.  They must include an intercept if one is wanted; the
-        default is a single column of ones.
+        Covariates (fixed effects).  They enter the model before the tested
+        variant: ``y ~ [intercept, M, g]``.
+    intercept : bool
+        Prepend a column of ones to the covariates.  Set it to ``False`` when
+        ``M`` already contains an intercept.
     verbose : bool
         Print progress and timing.
     threads : int or None
@@ -132,10 +135,10 @@ def scan(Y, G, K=None, M=None, verbose=False, threads=8):
         each null model.
     """
     with threadpool_limits(limits=threads):
-        return _scan(Y, G, K, M, verbose)
+        return _scan(Y, G, K, M, intercept, verbose)
 
 
-def _scan(Y, G, K, M, verbose):
+def _scan(Y, G, K, M, intercept, verbose):
     start = time.perf_counter()
 
     Y, pheno_names, index = _as_2d(Y, "y", allow_nan=True)
@@ -146,11 +149,15 @@ def _scan(Y, G, K, M, verbose):
         raise ValueError(f"G has {G.shape[0]} rows but Y has {n}")
 
     if M is None:
-        M = np.ones((n, 1))
+        M = np.empty((n, 0))
     M, _, m_index = _as_2d(M, "m")
     _check_index(index, m_index, "M")
     if M.shape[0] != n:
         raise ValueError(f"M has {M.shape[0]} rows but Y has {n}")
+    if intercept:
+        M = np.column_stack([np.ones(n), M])
+    if M.shape[1] == 0:
+        raise ValueError("no covariates: pass M or use intercept=True")
 
     if K is not None:
         if isinstance(K, pd.DataFrame):

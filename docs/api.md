@@ -1,6 +1,6 @@
 # API
 
-## `cmix.scan(Y, G, K=None, M=None, verbose=False, threads=8)`
+## `cmix.scan(Y, G, K=None, M=None, intercept=True, verbose=False, threads=8)`
 
 Test the association of every column of `G` with every column of `Y`.
 
@@ -9,7 +9,8 @@ Test the association of every column of `G` with every column of `Y`.
 | `Y`       | `(n,)`/`(n, q)`| Phenotypes. `NaN` allowed (each phenotype uses its observed samples).       |
 | `G`       | `(n, p)`       | Variants (genes, mutations, ...) tested one at a time.                      |
 | `K`       | `(n, n)`       | Kinship matrix for the random effect. `None` gives a plain linear model.    |
-| `M`       | `(n, c)`       | Covariates, including the intercept. Default: a column of ones.             |
+| `M`       | `(n, c)`       | Covariates (fixed effects); they enter before the tested variant.           |
+| `intercept` | bool         | Prepend a column of ones to `M` (default). Use `False` if `M` has one.      |
 | `verbose` | bool           | Print progress and total time.                                              |
 | `threads` | int or None    | Cap on BLAS threads during the scan (`None`: leave BLAS untouched). The matrices are small; on a 48-core server the default cap of 8 made a scan with many missingness patterns 10x faster. |
 

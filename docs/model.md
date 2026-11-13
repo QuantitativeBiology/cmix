@@ -43,8 +43,9 @@ residual variance).
 
 ## Testing each variant
 
-For every column `g` of `G` the alternative model `y ~ [M, g]` is compared
-with the null `y ~ M` by a likelihood ratio test with one degree of freedom.
+For every column `g` of `G` the alternative model `y ~ [M, g]` (intercept
+and covariates first, the tested variant as the last column) is compared with
+the null `y ~ M` by a likelihood ratio test with one degree of freedom.
 `delta` is kept at its null estimate (the usual FaST-LMM / limix shortcut) and
 the residual variance is re-estimated for every variant.
 

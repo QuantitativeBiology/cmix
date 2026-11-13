@@ -42,9 +42,9 @@ X = pd.read_csv("genomics.csv", index_col=0)
 K = cmix.kinship(X)                      # samples x samples, diagonal mean 1
 
 y = pd.read_csv("phenotype.csv", index_col=0)["drug"]   # samples, NaN allowed
-M = pd.DataFrame({"intercept": 1.0, "suspension": X_suspension}, index=X.index)
+M = pd.DataFrame({"suspension": X_suspension}, index=X.index)  # covariates
 
-result = cmix.scan(y, X, K=K, M=M)       # one LMM null fit, 1 LRT per feature
+result = cmix.scan(y, X, K=K, M=M)       # intercept added; one LRT per feature
 result.stats.sort_values("pvalue").head()
 #   phenotype   variant      beta   beta_se        lrt        pvalue      n
 #   drug        TP53_mut  -1.52     0.11        168.3      1.9e-38      889

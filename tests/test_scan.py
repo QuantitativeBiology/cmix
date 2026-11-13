@@ -23,10 +23,11 @@ def test_scan_without_kinship_matches_statsmodels(simulated):
     y, G, M = simulated["y"], simulated["G"], simulated["M"]
     res = cmix.scan(y, G, M=M)
     assert res.variances["h2"].isna().all()
+    M0 = np.c_[np.ones(len(y)), M.to_numpy()]
     for v in ["v0", "v10", "v42"]:
-        X = np.c_[M.to_numpy(), G[v].to_numpy()]
+        X = np.c_[M0, G[v].to_numpy()]  # covariates first, tested variant last
         fit = sm.OLS(y.to_numpy(), X).fit()
-        null = sm.OLS(y.to_numpy(), M.to_numpy()).fit()
+        null = sm.OLS(y.to_numpy(), M0).fit()
         np.testing.assert_allclose(res.beta.loc[v, "trait"], fit.params[-1], rtol=1e-10)
         np.testing.assert_allclose(res.beta_se.loc[v, "trait"], fit.bse[-1], rtol=1e-10)
         np.testing.assert_allclose(res.lrt.loc[v, "trait"], 2 * (fit.llf - null.llf), rtol=1e-8)
@@ -121,3 +122,15 @@ def test_threads_argument_does_not_change_results(simulated):
     for threads in (1, None):
         res = cmix.scan(y, G, K=K, M=M, threads=threads)
         pd.testing.assert_frame_equal(res.pvalue, ref.pvalue, rtol=1e-8)
+
+
+def test_intercept_argument(simulated):
+    y, G, K, M = simulated["y"], simulated["G"], simulated["K"], simulated["M"]
+    auto = cmix.scan(y, G, K=K, M=M)  # intercept added by default
+    manual = cmix.scan(y, G, K=K, M=M.assign(intercept=1.0), intercept=False)
+    pd.testing.assert_frame_equal(auto.pvalue, manual.pvalue, rtol=1e-8)
+    pd.testing.assert_frame_equal(auto.beta, manual.beta, rtol=1e-8)
+    none = cmix.scan(y, G, K=K, M=M, intercept=False)
+    assert not np.allclose(none.pvalue, auto.pvalue)
+    with pytest.raises(ValueError, match="no covariates"):
+        cmix.scan(y, G, intercept=False)
