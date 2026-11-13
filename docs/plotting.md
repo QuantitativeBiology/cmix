@@ -41,11 +41,12 @@ cmix.plot.qqplot(lm.pvalue.to_numpy().ravel(), ax=ax, label="LM")
 cmix.plot.qqplot(lmm.pvalue.to_numpy().ravel(), ax=ax, label="LMM", color=cmix.plot.RED)
 ```
 
-## `kinship(K, cluster=False, cmap="Reds", ax=None)`
+## `kinship(K, cluster=False, cmap="Reds", vmin=None, vmax=None, ax=None)`
 
 Heatmap of a kinship matrix with a colour bar. `cluster=True` reorders the
 samples by average-linkage hierarchical clustering so related groups appear
-as blocks.
+as blocks. The colour range defaults to the 1st-99th percentiles of the
+off-diagonal values so the diagonal does not hide the structure.
 
 ```python
 cmix.plot.kinship(K, cluster=True)

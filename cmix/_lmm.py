@@ -15,12 +15,14 @@ strategy.
 from __future__ import annotations
 
 import numpy as np
-from scipy import linalg, optimize, special
+from scipy import linalg, special
 
 __all__ = ["eigh_kinship", "fit_null", "scan_variants", "LOG_DELTA_BOUNDS"]
 
 LOG_DELTA_BOUNDS = (-10.0, 10.0)
 _GRID_SIZE = 64
+_REFINE_SIZE = 16
+_REFINE_STEPS = 3
 
 
 def eigh_kinship(K):
@@ -35,7 +37,7 @@ def eigh_kinship(K):
     U : ndarray, shape (n, n)
         Eigenvectors, ``K = U @ diag(S) @ U.T``.
     """
-    S, U = linalg.eigh(np.asarray(K, dtype=float), check_finite=False)
+    S, U = linalg.eigh(np.asarray(K, dtype=float), driver="evd", check_finite=False)
     return np.clip(S, 0.0, None), U
 
 
@@ -61,11 +63,12 @@ def _lml(log_delta, yt, Mt, S):
     n = yt.shape[0]
     log_delta = np.atleast_1d(np.asarray(log_delta, dtype=float))
     w = 1.0 / (S[None, :] + np.exp(log_delta)[:, None])  # (k, n)
-    A = np.einsum("kn,nc,nd->kcd", w, Mt, Mt)  # (k, c, c)
-    b = np.einsum("kn,nc,n->kc", w, Mt, yt)  # (k, c)
+    WM = w[:, :, None] * Mt[None, :, :]  # (k, n, c)
+    A = np.matmul(WM.transpose(0, 2, 1), Mt)  # (k, c, c)
+    b = (w * yt) @ Mt  # (k, c)
     beta = np.einsum("kcd,kd->kc", np.linalg.pinv(A), b)  # (k, c)
     r = yt[None, :] - beta @ Mt.T  # (k, n)
-    rss = np.einsum("kn,kn->k", w, r * r)
+    rss = (w * r * r).sum(axis=1)
     return -0.5 * (n * np.log(2 * np.pi * rss / n) + n - np.log(w).sum(axis=1))
 
 
@@ -86,15 +89,15 @@ def fit_null(yt, Mt, S):
     dict with ``delta``, ``sigma_g``, ``sigma_e`` (variances), ``h2``,
     ``lml`` and ``beta`` (covariate effects).
     """
+    # Coarse grid over log(delta), then successive batched refinements of the
+    # bracket around the maximum.  Each stage is one vectorised call.
     grid = np.linspace(*LOG_DELTA_BOUNDS, _GRID_SIZE)
-    values = _lml(grid, yt, Mt, S)
-    i = int(np.argmax(values))
-    lo = grid[max(i - 1, 0)]
-    hi = grid[min(i + 1, grid.size - 1)]
-    res = optimize.minimize_scalar(
-        lambda x: -_lml(x, yt, Mt, S)[0], bounds=(lo, hi), method="bounded"
-    )
-    log_delta = res.x if -res.fun >= values[i] else grid[i]
+    for _ in range(_REFINE_STEPS + 1):
+        values = _lml(grid, yt, Mt, S)
+        i = int(np.argmax(values))
+        lo, hi = grid[max(i - 1, 0)], grid[min(i + 1, grid.size - 1)]
+        grid = np.linspace(lo, hi, _REFINE_SIZE)
+    log_delta = grid[np.argmax(_lml(grid, yt, Mt, S))]
 
     n = yt.shape[0]
     delta = float(np.exp(log_delta))

@@ -74,17 +74,22 @@ linear regressions.
 
 ## Speed
 
-Timings from the example notebook (48-core server, OpenBLAS; `cmix.scan`
-alone, excluding data loading):
+Timings from the example notebook (shared 48-core server, OpenBLAS capped at
+8 threads by `scan`; `cmix.scan` alone, data loading excluded):
 
-| scan                                          | tests        | linear model | mixed model |
-|-----------------------------------------------|--------------|--------------|-------------|
-| 819 drugs x 585 genomic features (~890 lines) | 479k         | TBD          | TBD         |
-| 17,486 CRISPR genes x 541 features (534 lines)| 9.5M         | TBD          | TBD         |
+| scan                                            | tests  | linear model | mixed model |
+|-------------------------------------------------|--------|--------------|-------------|
+| 819 drugs x 529 genomic features (up to 991 lines, 515 missingness patterns) | 430k | 1.6 s | 31 s |
+| 17,486 CRISPR genes x 395 features (535 lines)  | 6.9M   | 2-13 s*      | 77 s        |
 
-The mixed model cost is dominated by one variance component fit per phenotype
-(a 1-D likelihood optimisation) plus, when phenotypes have different missing
-samples, one eigendecomposition per missingness pattern.
+\* the linear model scan of the CRISPR data is a single matrix product; it ran
+in about 2 s in isolation and 13 s while the server was busy.
+
+The mixed model cost is one variance component fit per phenotype (a batched
+1-D likelihood search) plus, when phenotypes have different missing samples,
+one eigendecomposition per missingness pattern. `scan` caps the BLAS thread
+pool (default 8): on many-core machines letting BLAS use every core for these
+small matrices made the drug scan more than ten times slower.
 
 ## Layout
 

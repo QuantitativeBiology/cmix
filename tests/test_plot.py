@@ -48,3 +48,22 @@ def test_kinship_plot(simulated):
     ax = plot.kinship(pd.DataFrame(simulated["K"]), cluster=True)
     assert ax.images[0].get_array().shape == simulated["K"].shape
     plt.close("all")
+
+
+def test_kinship_colour_range_ignores_diagonal():
+    K = np.full((10, 10), 0.1) + np.eye(10) * 5
+    ax = plot.kinship(K)
+    assert ax.images[0].get_clim()[1] < 1
+    plt.close("all")
+    ax = plot.kinship(K, vmin=0, vmax=5)
+    assert ax.images[0].get_clim() == (0, 5)
+    plt.close("all")
+
+
+def test_qqplot_x_axis_follows_expected_range():
+    pv = np.random.default_rng(1).uniform(size=1000)
+    pv[:3] = 1e-30
+    ax = plot.qqplot(pv)
+    assert ax.get_xlim()[1] < 5
+    assert ax.get_ylim()[1] > 20
+    plt.close("all")

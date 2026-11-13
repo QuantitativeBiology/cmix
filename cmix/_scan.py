@@ -9,6 +9,7 @@ from functools import cached_property
 
 import numpy as np
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
 from ._lmm import eigh_kinship, fit_null, scan_variants
 
@@ -93,7 +94,7 @@ def _check_index(reference, index, name):
         raise ValueError(f"the sample index of {name} does not match the one of Y")
 
 
-def scan(Y, G, K=None, M=None, verbose=False):
+def scan(Y, G, K=None, M=None, verbose=False, threads=8):
     """Test the association of every column of ``G`` with every column of ``Y``.
 
     For each phenotype a null model ``y ~ M`` (plus the random effect when a
@@ -117,6 +118,11 @@ def scan(Y, G, K=None, M=None, verbose=False):
         default is a single column of ones.
     verbose : bool
         Print progress and timing.
+    threads : int or None
+        Maximum number of BLAS threads used during the scan.  The matrices
+        involved are small, and letting BLAS use every core of a large server
+        slows the scan down by an order of magnitude; ``None`` leaves the BLAS
+        configuration untouched.
 
     Returns
     -------
@@ -125,6 +131,11 @@ def scan(Y, G, K=None, M=None, verbose=False):
         p-values (variants x phenotypes) plus the variance components of
         each null model.
     """
+    with threadpool_limits(limits=threads):
+        return _scan(Y, G, K, M, verbose)
+
+
+def _scan(Y, G, K, M, verbose):
     start = time.perf_counter()
 
     Y, pheno_names, index = _as_2d(Y, "y", allow_nan=True)

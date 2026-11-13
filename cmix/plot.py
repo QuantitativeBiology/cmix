@@ -166,19 +166,19 @@ def qqplot(pvalue, band=True, color=GREY, label=None, ax=None):
         lo = -np.log10(stats.beta.ppf(0.975, ranks, n + 1 - ranks))
         hi = -np.log10(stats.beta.ppf(0.025, ranks, n + 1 - ranks))
         ax.fill_between(expected, lo, hi, color=LIGHT_GREY, alpha=0.4, lw=0, zorder=0)
-    top = max(expected.max(), observed.max()) * 1.05
-    ax.plot([0, top], [0, top], color=RED, lw=0.8, zorder=1)
+    xmax = max(expected.max() * 1.05, ax.get_xlim()[1] if ax.has_data() else 0.0)
+    ax.plot([0, xmax], [0, xmax], color=RED, lw=0.8, zorder=1)
     ax.scatter(expected, observed, s=6, lw=0, color=color, label=label, zorder=2)
     ax.set_xlabel(r"expected $-\log_{10}$(p-value)")
     ax.set_ylabel(r"observed $-\log_{10}$(p-value)")
-    ax.set_xlim(0, top)
+    ax.set_xlim(0, xmax)
     ax.set_ylim(0, None)
     if label is not None:
         ax.legend(frameon=False)
     return ax
 
 
-def kinship(K, cluster=False, cmap="Reds", ax=None):
+def kinship(K, cluster=False, cmap="Reds", vmin=None, vmax=None, ax=None):
     """Heatmap of a kinship matrix.
 
     Parameters
@@ -188,6 +188,10 @@ def kinship(K, cluster=False, cmap="Reds", ax=None):
         Reorder the samples by hierarchical clustering (average linkage).
     cmap : str
         Sequential matplotlib colormap.
+    vmin, vmax : float, optional
+        Colour range.  By default the 1st and 99th percentiles of the
+        off-diagonal values, so that the (large) diagonal does not wash out
+        the relatedness between samples.
     ax : matplotlib Axes, optional
 
     Returns
@@ -206,7 +210,12 @@ def kinship(K, cluster=False, cmap="Reds", ax=None):
         K = K[np.ix_(order, order)]
     if ax is None:
         _, ax = plt.subplots(figsize=(2.6, 2.4))
-    img = ax.imshow(K, cmap=cmap, interpolation="nearest", aspect="equal")
+    off_diagonal = K[~np.eye(K.shape[0], dtype=bool)]
+    if off_diagonal.size and (vmin is None or vmax is None):
+        lo, hi = np.percentile(off_diagonal, [1, 99])
+        vmin = lo if vmin is None else vmin
+        vmax = hi if vmax is None else vmax
+    img = ax.imshow(K, cmap=cmap, interpolation="nearest", aspect="equal", vmin=vmin, vmax=vmax)
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():

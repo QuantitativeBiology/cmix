@@ -1,6 +1,6 @@
 # API
 
-## `cmix.scan(Y, G, K=None, M=None, verbose=False)`
+## `cmix.scan(Y, G, K=None, M=None, verbose=False, threads=8)`
 
 Test the association of every column of `G` with every column of `Y`.
 
@@ -11,6 +11,7 @@ Test the association of every column of `G` with every column of `Y`.
 | `K`       | `(n, n)`       | Kinship matrix for the random effect. `None` gives a plain linear model.    |
 | `M`       | `(n, c)`       | Covariates, including the intercept. Default: a column of ones.             |
 | `verbose` | bool           | Print progress and total time.                                              |
+| `threads` | int or None    | Cap on BLAS threads during the scan (`None`: leave BLAS untouched). The matrices are small; on a 48-core server the default cap of 8 made a scan with many missingness patterns 10x faster. |
 
 `numpy` arrays and `pandas` objects are accepted. With `pandas` input the
 sample index of `G`, `M` and `K` must equal the index of `Y` (same order); the

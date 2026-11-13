@@ -113,3 +113,11 @@ def test_redundant_covariate_column_is_tolerated(simulated):
     ref_lm = cmix.scan(y, G, M=M)
     res_lm = cmix.scan(y, G, M=M_zero)
     pd.testing.assert_frame_equal(res_lm.pvalue, ref_lm.pvalue, rtol=1e-6)
+
+
+def test_threads_argument_does_not_change_results(simulated):
+    y, G, K, M = simulated["y"], simulated["G"], simulated["K"], simulated["M"]
+    ref = cmix.scan(y, G, K=K, M=M)
+    for threads in (1, None):
+        res = cmix.scan(y, G, K=K, M=M, threads=threads)
+        pd.testing.assert_frame_equal(res.pvalue, ref.pvalue, rtol=1e-8)

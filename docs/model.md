@@ -23,8 +23,9 @@ so that `y~ ~ N(M~ b, sigma_g^2 diag(S + delta))`. Everything is then a
 weighted least squares problem with weights `w_i = 1 / (S_i + delta)`.
 
 `delta` is estimated by maximum likelihood over `log(delta) in [-10, 10]`: a
-grid of 64 values is evaluated in one vectorised call, and the best bracket is
-refined with Brent's method. `sigma_g^2` is profiled out analytically. Reported
+grid of 64 values is evaluated in one vectorised call and the bracket around
+the maximum is refined three times with 16-point grids (final resolution
+about 0.001 in `log(delta)`). `sigma_g^2` is profiled out analytically. Reported
 variance components:
 
 | column    | meaning                                                            |
@@ -84,6 +85,7 @@ Missing values in `G`, `M` or `K` raise an error.
 | all variants for one phenotype      | `O(n p c)`                         |
 | all variants, all phenotypes (LM)   | one `O(n p q)` matrix product      |
 
-On 534 samples, 678 variants and 17,486 phenotypes a linear model scan takes
-about 2 seconds and a mixed model scan (one variance component fit per
-phenotype) about 2 minutes on a 48-core machine with OpenBLAS.
+In the example notebook (shared 48-core server, BLAS capped at 8 threads)
+17,486 CRISPR phenotypes x 395 variants on 535 cell lines took about 2 s as a
+linear model and 77 s as a mixed model with five covariates; 819 drugs x 529
+variants with 515 different missingness patterns took 1.6 s and 31 s.
